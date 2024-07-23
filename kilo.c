@@ -11,6 +11,9 @@
 struct termios orig_termios;
 
 void die(const char *s) {
+  write(STDOUT_FILENO, "\x1b[2J", 4);
+  write(STDOUT_FILENO, "\x1b[H", 3);
+
   perror(s);
   exit(1);
 }
@@ -54,19 +57,41 @@ char editorReadKey() {
 void editorProcessKeypress() {
   char c = editorReadKey();
 
-  // printf("%d (%c)\r\n",c,c);
+  printf("%d (%c)\r\n", c, c);
 
   switch (c) {
   case CTRL_KEY('q'):
+    write(STDOUT_FILENO, "\x1b[2J", 4);
+    write(STDOUT_FILENO, "\x1b[H", 3);
     exit(0);
     break;
   }
+}
+
+void editorDrawRows() {
+    for(int y=0; y<24; y++) {
+        write(STDOUT_FILENO, "~\r\n", 3);
+    }
+}
+
+void editorRefreshScreen() {
+  // escape sequences are from vt100 user guide
+  // used to clear screen
+  write(STDOUT_FILENO, "\x1b[2J", 4);
+
+  // used to put the cursor at the top left
+  write(STDOUT_FILENO, "\x1b[H", 3);
+
+  editorDrawRows();
+
+  write(STDOUT_FILENO, "\x1b[H", 3);
 }
 
 int main() {
   enableRawMode();
 
   while (1) {
+    editorRefreshScreen();
     editorProcessKeypress();
   }
 
